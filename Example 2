@@ -1,0 +1,61 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models, datasets
+import numpy as np
+import time
+
+(x_train, y_train), (x_test, y_test) = datasets.mnist.load_data()
+
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+x_train = np.expand_dims(x_train, axis=-1)
+x_test = np.expand_dims(x_test, axis=-1)
+
+y_train = tf.keras.utils.to_categorical(y_train, num_classes=10)
+y_test = tf.keras.utils.to_categorical(y_test, num_classes=10)
+
+def VGG16(input_shape=(224, 224, 3), num_classes=10):
+    model = models.Sequential()
+
+    model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=input_shape))
+    model.add(layers.Conv2D(64, (3, 3), activation='relu', padding='same'))
+    model.add(layers.MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(128, (3, 3), activation='relu', padding='same'))
+    model.add(layers.MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(256, (3, 3), activation='relu', padding='same'))
+    model.add(layers.MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.Conv2D(512, (3, 3), activation='relu', padding='same'))
+    model.add(layers.MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(layers.Flatten())
+    model.add(layers.Dense(4096, activation='relu'))
+    model.add(layers.Dense(4096, activation='relu'))
+    model.add(layers.Dense(num_classes, activation='softmax'))
+
+    return model
+
+model = VGG16(input_shape=(224, 224, 1), num_classes=10)
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+batch_size = 64
+epochs = 10
+start_time = time.time()
+model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
+end_time = time.time()
+print(f"Training time: {int(end_time - start_time)} seconds")
+
+test_loss, test_accuracy = model.evaluate(x_test, y_test)
+print(f"Test accuracy: {test_accuracy}")
